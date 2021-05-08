@@ -63,11 +63,10 @@ bot.on('postback:TOPICS', (payload, chat) => {
 
 // Reakce na tlačítko 'Coin description!'
 bot.on('postback:DESCRIPTION', (payload, chat) => {
-  getCoin(chat, coinDescription)
+  getCoinNameOrSymbol(chat, coinDescription)
 });
 
 function coinDescription(chat, coinNameOrCode) {
-  console.log(`get desription for ${coinNameOrCode}`)
   api.getCoinsIndex().then((data) => {
       let downcasedCoin = coinNameOrCode.toLowerCase()
       let coinData = data.coins.find(coin => coin.code.toLowerCase() === downcasedCoin || coin.name.toLowerCase() === downcasedCoin);
@@ -81,40 +80,40 @@ function coinDescription(chat, coinNameOrCode) {
   )
 }
 
-function findCoinData(data, coinNameOrCode) {
-  let downcasedCoin = coinNameOrCode.toLowerCase()
-  return data.coins.find(coin => coin.code.toLowerCase() === downcasedCoin || coin.name.toLowerCase() === downcasedCoin);
-}
 
 // Reakce na tlačítko 'Coin price!'
 bot.on('postback:PRICE', (payload, chat) => {
-  getCoin(chat, coinPrice)
+  chat.conversation((conversation) => {
+    getCoinNameOrSymbol(chat, conversation, coinPrice)
+  });
 });
 
-function coinPrice(chat, coinNameOrCode) {
-  console.log(`get price for ${coinNameOrCode}`);
+function coinPrice(chat, conversation, coinNameOrCode) {
   api.getCoinsIndex().then((data) => {
       let coinData = findCoinData(data, coinNameOrCode);
       if (coinData) {
         api.getCoinPrice(coinData.uuid).then((coinPrice) => {
-          console.log(coinPrice);
           chat.say(`Actual price of ${coinData.name} is ${coinPrice}`)
         })
+      } else {
+        handleCoinNotFound(chat, conversation, getCoinNameOrSymbol, coinPrice)
       }
     }
   )
 }
 
-function getCoin(chat, callback) {
-  chat.conversation((conversation) => {
-    conversation.ask(`Coin?`, (payload, convo) => {
-      const text = payload.message.text;
-      callback(chat, text);
-    });
+/*
+  Ziska od uzivatele nazev nebo symbol coinu a preda ho callback funkci ke zpracovani
+ */
+function getCoinNameOrSymbol(chat, conversation, callback) {
+  conversation.ask(`What is the name or symbol of the coin?`, (payload, conversation) => {
+    callback(chat, conversation, payload.message.text);
   });
 }
 
-// Vypíše náhodný fakt a po chvilce zavolá funkci pro dotaz na pokračování
+/*
+ Vypíše náhodný fakt a po chvilce zavolá funkci pro dotaz na pokračování
+ */
 function sayFact(chat, conversation) {
   chat.say(constants.RANDOM_FACTS[Math.floor(Math.random() * constants.RANDOM_FACTS.length)])
   setTimeout(() => {
@@ -122,6 +121,9 @@ function sayFact(chat, conversation) {
   }, 2000)
 }
 
+/*
+ Dotaz, zda uzivatel chce slyset dalsi nahodny fakt.
+ */
 function askIfUserWantsAnotherFact(chat, conversation) {
   conversation.ask({
     text: "Would you like to hear next one?",
@@ -135,6 +137,26 @@ function askIfUserWantsAnotherFact(chat, conversation) {
       conversation.end();
     }
   });
+}
+
+function handleCoinNotFound(chat, conversation, retryCallback, callback2) {
+  conversation.ask({
+    text: "I don't know this coin. Try another?",
+    quickReplies: ["Yes", "No"],
+    options: {typing: true}
+  }, (payload, conversation) => {
+    if (payload.message.text === "Yes") {
+      retryCallback(chat, conversation, callback2)
+    } else {
+      conversation.say("Ok, bye for now.", {typing: true});
+      conversation.end();
+    }
+  })
+}
+
+function findCoinData(data, coinNameOrCode) {
+  let downcasedCoin = coinNameOrCode.toLowerCase();
+  return data.coins.find(coin => coin.code.toLowerCase() === downcasedCoin || coin.name.toLowerCase() === downcasedCoin);
 }
 
 
