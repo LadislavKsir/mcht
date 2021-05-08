@@ -20,7 +20,6 @@ bot.setGreetingText('Vítejte.');
   Reakce na pozdrav
  */
 bot.hear(constants.GREETINGS, (payload, chat) => {
-  console.log('The user said "hello" or "hi"!');
   chat.say({
     text: 'What can I do for you?',
     buttons: [
@@ -38,37 +37,106 @@ bot.on('postback:ABOUT', (payload, chat) => {
 
 });
 
+// Reakce na tlačítko 'Surprise me!'
+bot.on('postback:RANDOM_FACT', (payload, chat) => {
+  chat.conversation((conversation) => {
+    sayFact(chat, conversation)
+  });
+});
+
 // Reakce na tlačítko 'Help me with...?'
 bot.on('postback:TOPICS', (payload, chat) => {
 
+  api.getCoinsIndex().then((data) => {
+    chat.say(`I can tell you something about ${data.coins.length} different coins! I know their actual price, description, and I can even show you their logo!`);
+    chat.say({
+      text: 'What can I do for you?',
+      buttons: [
+        {type: 'postback', title: 'Coin price', payload: 'PRICE'},
+        {type: 'postback', title: 'Coin description', payload: 'DESCRIPTION'},
+        {type: 'postback', title: 'Coin logo', payload: 'LOGO'}
+      ]
+    });
+  })
+
 });
 
-// Reakce na tlačítko 'Surprise me!'
-bot.on('postback:RANDOM_FACT', (payload, chat) => {
+// Reakce na tlačítko 'Coin description!'
+bot.on('postback:DESCRIPTION', (payload, chat) => {
+  getCoin(chat, coinDescription)
+});
+
+function coinDescription(chat, coinNameOrCode) {
+  console.log(`get desription for ${coinNameOrCode}`)
+  api.getCoinsIndex().then((data) => {
+      let downcasedCoin = coinNameOrCode.toLowerCase()
+      let coinData = data.coins.find(coin => coin.code.toLowerCase() === downcasedCoin || coin.name.toLowerCase() === downcasedCoin);
+      if (coinData) {
+        api.getCoinDescription(coinData.uuid).then((coinDescription) => {
+          console.log(coinDescription)
+          chat.say(coinDescription)
+        })
+      }
+    }
+  )
+}
+
+function findCoinData(data, coinNameOrCode) {
+  let downcasedCoin = coinNameOrCode.toLowerCase()
+  return data.coins.find(coin => coin.code.toLowerCase() === downcasedCoin || coin.name.toLowerCase() === downcasedCoin);
+}
+
+// Reakce na tlačítko 'Coin price!'
+bot.on('postback:PRICE', (payload, chat) => {
+  getCoin(chat, coinPrice)
+});
+
+function coinPrice(chat, coinNameOrCode) {
+  console.log(`get price for ${coinNameOrCode}`);
+  api.getCoinsIndex().then((data) => {
+      let coinData = findCoinData(data, coinNameOrCode);
+      if (coinData) {
+        api.getCoinPrice(coinData.uuid).then((coinPrice) => {
+          console.log(coinPrice);
+          chat.say(`Actual price of ${coinData.name} is ${coinPrice}`)
+        })
+      }
+    }
+  )
+}
+
+function getCoin(chat, callback) {
+  chat.conversation((conversation) => {
+    conversation.ask(`Coin?`, (payload, convo) => {
+      const text = payload.message.text;
+      callback(chat, text);
+    });
+  });
+}
+
+// Vypíše náhodný fakt a po chvilce zavolá funkci pro dotaz na pokračování
+function sayFact(chat, conversation) {
   chat.say(constants.RANDOM_FACTS[Math.floor(Math.random() * constants.RANDOM_FACTS.length)])
-});
+  setTimeout(() => {
+    askIfUserWantsAnotherFact(chat, conversation)
+  }, 2000)
+}
 
+function askIfUserWantsAnotherFact(chat, conversation) {
+  conversation.ask({
+    text: "Would you like to hear next one?",
+    quickReplies: ["Yes", "No"],
+    options: {typing: true}
+  }, (payload, conversation) => {
+    if (payload.message.text === "Yes") {
+      sayFact(chat, conversation)
+    } else {
+      conversation.say("Ok", {typing: true});
+      conversation.end();
+    }
+  });
+}
 
-// bot.hear(['hello', 'hi'], (payload, chat) => {
-//   console.log('The user said "hello" or "hi"!');
-//   api.getCoinsList().then((data) => {
-//     console.log("coind data:" + data);
-//     chat.say('If you would like to know about movies, just type "movie" and movie name')
-//   });
-//
-// });
-//
-//
-
-
-// jakákoliv zpráva
-bot.on('message', (payload, chat) => {
-  // console.log(constants.GREETINGS);
-  const text = payload.message.text;
-  console.log(`The user said: ${text}`);
-// Send a button template
-
-});
 
 bot.hear('ask me something', (payload, chat) => {
 
@@ -107,9 +175,33 @@ bot.hear(/movie (.*)/i, (payload, chat, data) => {
     console.log(data);
     const movieName = data.match[1];
     console.log(`movieName: ${movieName}`);
-
-
   });
 });
+
+
+// bot.hear(['hello', 'hi'], (payload, chat) => {
+//   console.log('The user said "hello" or "hi"!');
+//   api.getCoinsList().then((data) => {
+//     console.log("coind data:" + data);
+//     chat.say('If you would like to know about movies, just type "movie" and movie na¨wme')
+//   });
+//
+// });
+//
+//
+
+
+// jakákoliv zpráva
+// bot.on('message', (payload, chat) => {
+//   // console.log(constants.GREETINGS);
+//   const text = payload.message.text;
+//   console.log(`The user said: ${text}`);
+//   api.getCoinsIndex().then((data) => {
+//     console.log("coind data:");
+//     console.log(data);
+//   });
+//
+//
+// });
 
 bot.start(port);
