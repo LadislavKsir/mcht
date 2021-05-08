@@ -1,0 +1,22 @@
+{
+  "name": "messenger",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "startDev": "nodemon index.js",
+    "startTunnel": "node tunnel.js"
+  },
+  "author": "Noah Vaillancourt",
+  "license": "ISC",
+  "dependencies": {
+    "bootbot": "^1.0.16",
+    "config": "2.0.1",
+    "ngrok": "^3.2.7",
+    "node-data": "^0.0.1",
+    "node-fetch": "^2.6.1",
+    "nodemon": "^1.18.10"
+  }
+}
