@@ -13,8 +13,12 @@ module.exports = {
     'In 2016, the cryptocurrency became the first to make it out of the Earth\'s atmosphere and into space. Cloud provider Genesis Mining tied a Bitcoin paper wallet and a 3D model of Bitcoin to a weather balloon, using a GoPro to track its progress. Successful transactions were carried out at 20 and 34 kilometres altitude.',
     'Just as dollars can be divided into cents and pounds into pence, Bitcoins also have their own denominations, but they\'re much smaller. Named after the mysterious inventor of the cryptocurrency, 1 Satoshi byte is worth 0.00000001 Bitcoin, a tiny amount!',
     'First Bitcoin transaction was a purchase of two … pizzas. Two pizzas were bought for 10 000 BTC. Yes, 10 000 BTC. It was in 2010, when such amount of BTC was worth 25 USD.',
-    '',
-    '',
-    '',
+    'The easiest way to buy Dogecoin is to create a wallet and then use one of the reliable exchangers. Note that you will need to have Bitcoins that will be exchanged to Doge.',
+    'One of the widespread ways of Dogecoin use is giving tips. They are awarded almost the same as “likes” in social nets. However, these tips award users with Dogecoins.',
+    'Dogecoin is widely represented in social media such as Twitter and TikTok. In summer 2020 the Dogecoin TikTok challenge popped-up encouraging people to invest in this cryptocurrency.',
+    'Although Ethereum is nominally a cryptocurrency, its main function was to provide and support the smart contracts. The modern version of Ethereum has grown as a platform, and now anyone can create a distributed system on its base.',
+    'It is difficult to overestimate the importance of the Japanese animator, director and manga artist — Hayao Miyazaki. In part, one of his works, “Laputa: Castle In The Sky”, served as an inspiration for Buterin. One of the anime heroes used the magic crystal Aethereum, which made it possible to extract energy from the air. The crystal of the flying stone was not only a source of energy, but also indicated the path to the cherished goal of the heroes.',
+    'Don’t get mixed up between Ethereum and Ether. Ether is the native token that people trade in, Ethereum the underlying blockchain network. Ether is traded as a virtual coin like other Altcoins. It is also used inside the Ethereum network to run applications. Moreover, it can be used to monetize the work done inside the platform.',
+    'Most of the emerging tokens are launched in Ethereum for their Initial Coin Offering sales. Over three-quarters of ICO sales are hosted on the blockchain. A majority of the ICOs are built on ERC-20.'
   ],
 };

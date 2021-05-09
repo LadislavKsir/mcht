@@ -15,11 +15,29 @@ const bot = new BootBot({
   React to greeting by user
  */
 bot.hear(constants.GREETINGS, (payload, chat) => {
+  introduction(chat)
+});
+
+/*
+  React to icebreaker response
+ */
+bot.on('postback:ICEBREAKER', (payload, chat) => {
+  introduction(chat)
+});
+
+// 'Surprise me!' button click handler
+bot.on('postback:RANDOM_FACT', (payload, chat) => {
+  chat.conversation((conversation) => {
+    sayFact(chat, conversation)
+  });
+});
+
+function introduction(chat) {
   chat.say('Greetings!');
   setTimeout(() => {
     showMenu(chat)
   }, 250)
-});
+}
 
 bot.hear(['menu'], (payload, chat) => {
   showMenu(chat)
