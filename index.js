@@ -28,7 +28,12 @@ bot.hear(['menu'], (payload, chat) => {
 
 // 'Who are you?' button click handler
 bot.on('postback:ABOUT', (payload, chat) => {
-
+  chat.say('I am CryptoBot - I have access to Coinranking API, so I know a lot of crypto coins. I can tell them their actual price or some basic info abou them. I also know some random facts, be sure to check them out!');
+  setTimeout(() => {
+    chat.conversation((conversation) => {
+      endConversation(chat, conversation)
+    });
+  }, 250)
 });
 
 // 'Surprise me!' button click handler
@@ -45,10 +50,10 @@ bot.on('postback:TOPICS', (payload, chat) => {
     chat.say(`I can tell you something about ${data.coins.length} different coins! I know their actual price, description, and I can even show you their logo!`);
     setTimeout(() => {
       chat.say({
-        text: 'What can I do for you?',
+        text: 'What would you like to know?',
         buttons: [
-          {type: 'postback', title: 'Coin price', payload: 'PRICE'},
-          {type: 'postback', title: 'Coin description', payload: 'DESCRIPTION'}
+          {type: 'postback', title: 'Price of a coin', payload: 'PRICE'},
+          {type: 'postback', title: 'Description of a coin', payload: 'DESCRIPTION'}
         ]
       });
     }, 250)
@@ -56,7 +61,7 @@ bot.on('postback:TOPICS', (payload, chat) => {
 
 });
 
-// 'Coin description!' button click handler
+// 'Description of a coin' button click handler
 bot.on('postback:DESCRIPTION', (payload, chat) => {
   chat.conversation((conversation) => {
     getCoinNameOrSymbol(chat, conversation, coinDescription)
@@ -64,7 +69,7 @@ bot.on('postback:DESCRIPTION', (payload, chat) => {
 });
 
 
-// 'Coin price!' button click handler
+// 'Price of a coin' button click handler
 bot.on('postback:PRICE', (payload, chat) => {
   chat.conversation((conversation) => {
     getCoinNameOrSymbol(chat, conversation, coinPrice)
