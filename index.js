@@ -100,7 +100,9 @@ function coinPrice(chat, conversation, coinNameOrCode) {
       if (coinData) {
         api.getCoinPrice(coinData.uuid).then((coinPrice) => {
           chat.say(`Actual price of ${coinData.name} is ${coinPrice} USD`);
-          endConversation(chat, conversation)
+          setTimeout(() => {
+            endConversation(chat, conversation)
+          }, 500);
         })
       } else {
         handleCoinNotFound(chat, conversation, getCoinNameOrSymbol, coinPrice)
@@ -189,6 +191,9 @@ function coinDescription(chat, conversation, coinNameOrCode) {
   )
 }
 
+/*
+  Gracefully end conversation
+ */
 function endConversation(chat, conversation) {
   chat.say("If you need anything else, just say 'menu', I will try to help you.");
   conversation.end();
