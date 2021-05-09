@@ -3,7 +3,7 @@ const config = require('config');
 const api = require('./lib/coinranking-api.js');
 const constants = require('./config/constants');
 
-var port = process.env.PORT || config.get('PORT');
+const port = process.env.PORT || config.get('PORT');
 
 const bot = new BootBot({
   accessToken: config.get('ACCESS_TOKEN'),
@@ -12,76 +12,59 @@ const bot = new BootBot({
 });
 
 /*
-  Nastavení úvodního oslovení, zobrazuje se při první interakci.
- */
-bot.setGreetingText('Vítejte.');
-
-/*
-  Reakce na pozdrav
+  React to greeting by user
  */
 bot.hear(constants.GREETINGS, (payload, chat) => {
-  chat.say({
-    text: 'What can I do for you?',
-    buttons: [
-      {type: 'postback', title: 'Who are you?', payload: 'ABOUT'},
-      {type: 'postback', title: 'Help me with...?', payload: 'TOPICS'},
-      {type: 'postback', title: 'Surprise me!', payload: 'RANDOM_FACT'}
-    ]
-  });
   chat.say('Greetings!');
+  setTimeout(() => {
+    showMenu(chat)
+  }, 250)
+});
+
+bot.hear(['menu'], (payload, chat) => {
+  showMenu(chat)
 });
 
 
-// Reakce na tlačítko 'Who are you?'
+// 'Who are you?' button click handler
 bot.on('postback:ABOUT', (payload, chat) => {
 
 });
 
-// Reakce na tlačítko 'Surprise me!'
+// 'Surprise me!' button click handler
 bot.on('postback:RANDOM_FACT', (payload, chat) => {
   chat.conversation((conversation) => {
     sayFact(chat, conversation)
   });
 });
 
-// Reakce na tlačítko 'Help me with...?'
+// 'Tell me about...' button click handler
 bot.on('postback:TOPICS', (payload, chat) => {
 
   api.getCoinsIndex().then((data) => {
     chat.say(`I can tell you something about ${data.coins.length} different coins! I know their actual price, description, and I can even show you their logo!`);
-    chat.say({
-      text: 'What can I do for you?',
-      buttons: [
-        {type: 'postback', title: 'Coin price', payload: 'PRICE'},
-        {type: 'postback', title: 'Coin description', payload: 'DESCRIPTION'},
-        {type: 'postback', title: 'Coin logo', payload: 'LOGO'}
-      ]
-    });
+    setTimeout(() => {
+      chat.say({
+        text: 'What can I do for you?',
+        buttons: [
+          {type: 'postback', title: 'Coin price', payload: 'PRICE'},
+          {type: 'postback', title: 'Coin description', payload: 'DESCRIPTION'}
+        ]
+      });
+    }, 250)
   })
 
 });
 
-// Reakce na tlačítko 'Coin description!'
+// 'Coin description!' button click handler
 bot.on('postback:DESCRIPTION', (payload, chat) => {
-  getCoinNameOrSymbol(chat, coinDescription)
+  chat.conversation((conversation) => {
+    getCoinNameOrSymbol(chat, conversation, coinDescription)
+  });
 });
 
-function coinDescription(chat, coinNameOrCode) {
-  api.getCoinsIndex().then((data) => {
-      let downcasedCoin = coinNameOrCode.toLowerCase()
-      let coinData = data.coins.find(coin => coin.code.toLowerCase() === downcasedCoin || coin.name.toLowerCase() === downcasedCoin);
-      if (coinData) {
-        api.getCoinDescription(coinData.uuid).then((coinDescription) => {
-          console.log(coinDescription)
-          chat.say(coinDescription)
-        })
-      }
-    }
-  )
-}
 
-
-// Reakce na tlačítko 'Coin price!'
+// 'Coin price!' button click handler
 bot.on('postback:PRICE', (payload, chat) => {
   chat.conversation((conversation) => {
     getCoinNameOrSymbol(chat, conversation, coinPrice)
@@ -93,7 +76,8 @@ function coinPrice(chat, conversation, coinNameOrCode) {
       let coinData = findCoinData(data, coinNameOrCode);
       if (coinData) {
         api.getCoinPrice(coinData.uuid).then((coinPrice) => {
-          chat.say(`Actual price of ${coinData.name} is ${coinPrice}`)
+          chat.say(`Actual price of ${coinData.name} is ${coinPrice} USD`);
+          endConversation(chat, conversation)
         })
       } else {
         handleCoinNotFound(chat, conversation, getCoinNameOrSymbol, coinPrice)
@@ -103,7 +87,7 @@ function coinPrice(chat, conversation, coinNameOrCode) {
 }
 
 /*
-  Ziska od uzivatele nazev nebo symbol coinu a preda ho callback funkci ke zpracovani
+  Get coin name or symbol from user and handle it to callback function for processing
  */
 function getCoinNameOrSymbol(chat, conversation, callback) {
   conversation.ask(`What is the name or symbol of the coin?`, (payload, conversation) => {
@@ -112,17 +96,17 @@ function getCoinNameOrSymbol(chat, conversation, callback) {
 }
 
 /*
- Vypíše náhodný fakt a po chvilce zavolá funkci pro dotaz na pokračování
+ Reply with random fact and later call function to ask if another one is wanted
  */
 function sayFact(chat, conversation) {
-  chat.say(constants.RANDOM_FACTS[Math.floor(Math.random() * constants.RANDOM_FACTS.length)])
+  chat.say(constants.RANDOM_FACTS[Math.floor(Math.random() * constants.RANDOM_FACTS.length)]);
   setTimeout(() => {
     askIfUserWantsAnotherFact(chat, conversation)
   }, 2000)
 }
 
 /*
- Dotaz, zda uzivatel chce slyset dalsi nahodny fakt.
+ Ask user if he would like to hear another fact
  */
 function askIfUserWantsAnotherFact(chat, conversation) {
   conversation.ask({
@@ -133,8 +117,7 @@ function askIfUserWantsAnotherFact(chat, conversation) {
     if (payload.message.text === "Yes") {
       sayFact(chat, conversation)
     } else {
-      conversation.say("Ok", {typing: true});
-      conversation.end();
+      endConversation(chat, conversation)
     }
   });
 }
@@ -148,8 +131,7 @@ function handleCoinNotFound(chat, conversation, retryCallback, callback2) {
     if (payload.message.text === "Yes") {
       retryCallback(chat, conversation, callback2)
     } else {
-      conversation.say("Ok, bye for now.", {typing: true});
-      conversation.end();
+      endConversation(chat, conversation)
     }
   })
 }
@@ -159,71 +141,51 @@ function findCoinData(data, coinNameOrCode) {
   return data.coins.find(coin => coin.code.toLowerCase() === downcasedCoin || coin.name.toLowerCase() === downcasedCoin);
 }
 
+function coinDescription(chat, conversation, coinNameOrCode) {
+  api.getCoinsIndex().then((data) => {
+      let downcasedCoinNameOrCode = coinNameOrCode.toLowerCase();
+      let coinData = data.coins.find(coin => coin.code.toLowerCase() === downcasedCoinNameOrCode || coin.name.toLowerCase() === downcasedCoinNameOrCode);
+      if (coinData) {
+        api.getCoinDescription(coinData.uuid).then((coinDescription) => {
+          // Original description has HTML tags, we don't want them in chat - just remove them.
+          let description = coinDescription.replace(/(<([^>]+)>)/gi, "");
+          // Description is often quite big and breaches chat limitation to 2000 chars in message. So the solution is to send
+          // each paragraph (delimited by newline) separately. It is not error proof, as there can be paragraph bigger than the limit, lets
+          // hope there actually isn't any.
+          description.split("\n").forEach(function (paragraph, index) {
+            // Avoid mixed order of messages by sending them with 250ms delay
+            setTimeout(() => {
+              chat.say(paragraph)
+            }, 250 + index * 250)
+          })
+        })
+      } else {
+        handleCoinNotFound(chat, conversation, getCoinNameOrSymbol, coinDescription)
+      }
+    }
+  )
+}
 
-bot.hear('ask me something', (payload, chat) => {
+function endConversation(chat, conversation) {
+  chat.say("If you need anything else, just say 'menu', I will try to help you.");
+  conversation.end();
+}
 
-  const askName = (convo) => {
-    convo.ask(`What's your name?`, (payload, convo) => {
-      const text = payload.message.text;
-      convo.set('name', text);
-      convo.say(`Oh, your name is ${text}`).then(() => askFavoriteFood(convo));
-    });
-  };
-
-  const askFavoriteFood = (convo) => {
-    convo.ask(`What's your favorite food?`, (payload, convo) => {
-      const text = payload.message.text;
-      convo.set('food', text);
-      convo.say(`Got it, your favorite food is ${text}`).then(() => sendSummary(convo));
-
-    });
-  };
-
-  const sendSummary = (convo) => {
-    convo.say(`Ok, here's what you told me about you:
-	      - Name: ${convo.get('name')}
-	      - Favorite Food: ${convo.get('food')}`);
-    convo.end();
-  };
-
-  chat.conversation((convo) => {
-    askName(convo);
+/*
+  Show main actions menu
+ */
+function showMenu(chat) {
+  chat.say({
+    text: 'What can I do for you?',
+    buttons: [
+      {type: 'postback', title: 'Who are you?', payload: 'ABOUT'},
+      {type: 'postback', title: 'Tell me about...', payload: 'TOPICS'},
+      {type: 'postback', title: 'Surprise me!', payload: 'RANDOM_FACT'}
+    ]
   });
-});
+}
 
-
-bot.hear(/movie (.*)/i, (payload, chat, data) => {
-  chat.conversation((conversation) => {
-    console.log(data);
-    const movieName = data.match[1];
-    console.log(`movieName: ${movieName}`);
-  });
-});
-
-
-// bot.hear(['hello', 'hi'], (payload, chat) => {
-//   console.log('The user said "hello" or "hi"!');
-//   api.getCoinsList().then((data) => {
-//     console.log("coind data:" + data);
-//     chat.say('If you would like to know about movies, just type "movie" and movie na¨wme')
-//   });
-//
-// });
-//
-//
-
-
-// jakákoliv zpráva
-// bot.on('message', (payload, chat) => {
-//   // console.log(constants.GREETINGS);
-//   const text = payload.message.text;
-//   console.log(`The user said: ${text}`);
-//   api.getCoinsIndex().then((data) => {
-//     console.log("coind data:");
-//     console.log(data);
-//   });
-//
-//
-// });
-
+// Set greeting text - shown at first user interaction with the bot.
+bot.setGreetingText('Welcome!');
+// Start the bot!
 bot.start(port);
